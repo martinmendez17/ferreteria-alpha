@@ -1,26 +1,39 @@
 {
-  "_id": { "$oid": "6710a1f0c2e4b81a2c000301" },
+  "_id": {
+    "$oid": "6710a1f0c2e4b81a2c000301"
+  },
   "sku": "HER-0016",
   "nombre": "Martillo carpintero 16 oz",
   "descripcion": "Mango de fibra de vidrio y cabeza forjada.",
   "marca": "Forja Andina",
   "precioVenta": 8990,
-  "imagenUrl": "/img/productos/HER-0016.webp",
+  "imagenUrl": "/img/productos/HER-0016.svg",
   "unidadMedida": "unidad",
   "stockMinimo": 10,
   "estado": "activo",
-  "palabrasClave": ["martillo", "carpintería", "clavos", "fibra de vidrio"],
+  "palabrasClave": [
+    "martillo",
+    "carpintería",
+    "clavos",
+    "fibra de vidrio"
+  ],
   "categoria": {
-    "_id": { "$oid": "6710a1f0c2e4b81a2c000101" },
+    "_id": {
+      "$oid": "6710a1f0c2e4b81a2c000101"
+    },
     "nombre": "Herramientas manuales"
   },
   "proveedor": {
-    "_id": { "$oid": "6710a1f0c2e4b81a2c000202" },
+    "_id": {
+      "$oid": "6710a1f0c2e4b81a2c000202"
+    },
     "razonSocial": "Importadora Ferromax Ltda."
   },
   "inventario": {
     "stockActual": 48,
     "ubicacionBodega": "Pasillo 1-A",
-    "fechaActualizacion": { "$date": "2026-10-15T13:05:00Z" }
+    "fechaActualizacion": {
+      "$date": "2026-10-15T13:05:00Z"
+    }
   }
 }

@@ -1,18 +1,27 @@
-// npm run db:probar — muestra que el backend se conecta a la base y lee cada tabla
-import { prisma } from "../src/config/prisma";
+/*
+ * Comprueba la conexión a MongoDB y muestra cuántos documentos tiene cada colección.
+ *   npm run db:probar
+ */
+import { cliente, db } from "../src/config/db";
+import { env } from "../src/config/env";
 
-const [{ version }] = await prisma.$queryRaw<{ version: string }[]>`SELECT version()`;
-console.log("Conectado a:", version);
+async function main() {
+  await cliente.connect();
+  const info = await db.command({ buildInfo: 1 }).catch(() => ({ version: "?" }));
+  console.log(`Conectado a MongoDB ${info["version"]} · base "${env.mongodbDb}"`);
 
-const conteos = {
-  rol: await prisma.rol.count(),
-  usuario: await prisma.usuario.count(),
-  categoria: await prisma.categoria.count(),
-  proveedor: await prisma.proveedor.count(),
-  producto: await prisma.producto.count(),
-  inventario: await prisma.inventario.count(),
-  movimiento_inventario: await prisma.movimientoInventario.count(),
-};
-console.table(conteos);
+  const colecciones = ["usuarios", "categorias", "proveedores", "productos", "movimientos"];
+  for (const nombre of colecciones) {
+    console.log(`  ${nombre.padEnd(12)} ${await db.collection(nombre).countDocuments()} documentos`);
+  }
 
-await prisma.$disconnect();
+  const hola = await db.admin().command({ hello: 1 });
+  console.log(hola["setName"] ? `Replica set "${hola["setName"]}": las transacciones funcionan.` : "OJO: no es replica set, las transacciones fallarán.");
+}
+
+main()
+  .catch((e) => {
+    console.error("No se pudo conectar:", e instanceof Error ? e.message : e);
+    process.exitCode = 1;
+  })
+  .finally(() => cliente.close());

@@ -1,70 +1,84 @@
-import { prisma } from "../config/prisma";
-import { estadoStock, type EstadoStock } from "../utils/estadoStock";
+import type { Document, Filter, ObjectId } from "mongodb";
+import { COLACION_ES, col } from "../config/db";
+import type { ProductoDoc } from "../types/modelos";
+import { type EstadoStock, expresionEstadoStock } from "../utils/estadoStock";
+import { hoyEnChile, inicioDelDia } from "../utils/fechas";
+import { respuestaPaginada } from "../utils/validar";
+import { filtroTexto } from "./productos.service";
 
-/** Tabla del panel de inventario con el estado de cada producto (RF14). */
-export async function listarInventario(filtros: { texto?: string; estado?: EstadoStock }) {
-  const productos = await prisma.producto.findMany({
-    where: {
-      estado: "activo",
-      ...(filtros.texto && {
-        OR: [
-          { nombre: { contains: filtros.texto, mode: "insensitive" as const } },
-          { sku: { contains: filtros.texto, mode: "insensitive" as const } },
+/**
+ * RF14: tabla del panel de inventario. Los productos que requieren atención
+ * (sin stock y crítico) aparecen primero, como en el boceto del panel.
+ * El estado se calcula en la base con $switch y se ordena por prioridad.
+ */
+export async function listarInventario(f: {
+  texto?: string;
+  idCategoria?: ObjectId;
+  estado?: EstadoStock;
+  pagina: number;
+  porPagina: number;
+  saltar: number;
+}) {
+  const filtro: Filter<ProductoDoc> = { estado: "activo" };
+  if (f.texto) Object.assign(filtro, filtroTexto(f.texto));
+  if (f.idCategoria) filtro["categoria._id"] = f.idCategoria;
+
+  const pipeline: Document[] = [
+    { $match: filtro },
+    { $addFields: { estadoStock: expresionEstadoStock } },
+    ...(f.estado ? [{ $match: { estadoStock: f.estado } }] : []),
+    { $addFields: { prioridad: { $indexOfArray: [["sin_stock", "critico", "normal"], "$estadoStock"] } } },
+    { $sort: { prioridad: 1, nombre: 1 } },
+    {
+      $facet: {
+        datos: [
+          { $skip: f.saltar },
+          { $limit: f.porPagina },
+          {
+            $project: {
+              sku: 1, nombre: 1, marca: 1, unidadMedida: 1, stockMinimo: 1, estadoStock: 1,
+              categoria: 1, inventario: 1, imagenUrl: 1,
+            },
+          },
         ],
-      }),
+        total: [{ $count: "n" }],
+      },
     },
-    include: { categoria: { select: { nombre: true } }, inventario: true },
-    orderBy: { sku: "asc" },
-  });
-
-  const filas = productos.map((p) => {
-    const stock = p.inventario?.stockActual ?? 0;
-    return {
-      idProducto: p.idProducto,
-      sku: p.sku,
-      nombre: p.nombre,
-      categoria: p.categoria.nombre,
-      stockActual: stock,
-      stockMinimo: p.stockMinimo,
-      estadoStock: estadoStock(stock, p.stockMinimo),
-      ubicacionBodega: p.inventario?.ubicacionBodega ?? null,
-      fechaActualizacion: p.inventario?.fechaActualizacion ?? null,
-    };
-  });
-  return filtros.estado ? filas.filter((f) => f.estadoStock === filtros.estado) : filas;
+  ];
+  const [resultado] = await col.productos.aggregate(pipeline, { collation: COLACION_ES }).toArray();
+  return respuestaPaginada(resultado?.["datos"] ?? [], resultado?.["total"]?.[0]?.n ?? 0, f);
 }
 
-/** Indicadores del panel: productos activos, en stock crítico y movimientos del día. */
+/** Indicadores del panel: productos activos, en stock crítico o sin stock, y movimientos de hoy. */
 export async function resumenInventario() {
-  const inicioDelDia = new Date();
-  inicioDelDia.setHours(0, 0, 0, 0);
-
-  const [productosActivos, criticos, movimientosHoy] = await Promise.all([
-    prisma.producto.count({ where: { estado: "activo" } }),
-    productosEnStockCritico(),
-    prisma.movimientoInventario.count({ where: { fechaHora: { gte: inicioDelDia } } }),
+  const [productosActivos, enStockCritico, movimientosHoy] = await Promise.all([
+    col.productos.countDocuments({ estado: "activo" }),
+    col.productos.countDocuments({ estado: "activo", $expr: { $lte: ["$inventario.stockActual", "$stockMinimo"] } }),
+    col.movimientos.countDocuments({ fechaHora: { $gte: inicioDelDia(hoyEnChile()) } }),
   ]);
-  return { productosActivos, enStockCritico: criticos.length, movimientosHoy };
+  return { productosActivos, enStockCritico, movimientosHoy };
 }
 
 /**
- * RF14: productos en o bajo su stock mínimo.
- * Compara dos columnas de tablas distintas, por eso se usa SQL directo:
- * es la consulta C08 de database/03_consultas.sql, parametrizada por Prisma.
+ * RF14 · consulta C08 traducida: productos en o bajo su stock mínimo.
+ * En SQL comparaba dos columnas de tablas distintas (JOIN); aquí ambos
+ * campos están en el mismo documento y se comparan con $expr.
  */
 export async function productosEnStockCritico() {
-  return prisma.$queryRaw<
-    { idProducto: number; sku: string; nombre: string; stockActual: number; stockMinimo: number; faltante: number }[]
-  >`
-    SELECT p.idProducto  AS "idProducto",
-           p.sku,
-           p.nombre,
-           i.stockActual AS "stockActual",
-           p.stockMinimo AS "stockMinimo",
-           p.stockMinimo - i.stockActual AS faltante
-    FROM   producto p
-    JOIN   inventario i ON i.idProducto = p.idProducto
-    WHERE  p.estado = 'activo'
-      AND  i.stockActual <= p.stockMinimo
-    ORDER  BY faltante DESC`;
+  return col.productos
+    .aggregate([
+      { $match: { estado: "activo", $expr: { $lte: ["$inventario.stockActual", "$stockMinimo"] } } },
+      {
+        $project: {
+          sku: 1,
+          nombre: 1,
+          stockActual: "$inventario.stockActual",
+          stockMinimo: 1,
+          faltante: { $subtract: ["$stockMinimo", "$inventario.stockActual"] },
+          proveedor: 1,
+        },
+      },
+      { $sort: { faltante: -1 } },
+    ])
+    .toArray();
 }

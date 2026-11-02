@@ -1,8 +1,12 @@
-// Agrega a Request el usuario autenticado que deja el middleware de auth.
+import type { ObjectId } from "mongodb";
+import type { Rol } from "./modelos";
+
+// Agrega a Request el usuario autenticado que deja el middleware de sesión.
 export interface UsuarioAutenticado {
-  idUsuario: number;
-  nombre: string;
-  rol: string;
+  _id: ObjectId;
+  nombreCompleto: string;
+  email: string;
+  rol: Rol;
 }
 
 declare global {

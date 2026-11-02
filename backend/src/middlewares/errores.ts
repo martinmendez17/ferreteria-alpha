@@ -1,41 +1,69 @@
 import type { NextFunction, Request, Response } from "express";
+import { MongoNetworkError, MongoServerError, MongoServerSelectionError } from "mongodb";
 import { HttpError } from "../utils/httpError";
 
-/** Rutas que no existen. */
+/*
+ * Todas las respuestas de error tienen la misma forma:
+ *   { "error": "mensaje para mostrar", "codigo": "DATOS_INVALIDOS", "detalles": {...} }
+ * Así el frontend siempre sabe dónde leer el mensaje.
+ */
+
+/** Rutas que no existen: 404. */
 export function rutaNoEncontrada(req: Request, res: Response) {
-  res.status(404).json({ error: `No existe la ruta ${req.method} ${req.originalUrl}` });
+  res.status(404).json({ error: `No existe la ruta ${req.method} ${req.originalUrl}`, codigo: "RUTA_NO_ENCONTRADA" });
 }
 
-/**
- * Manejador central de errores. Express 5 envía aquí también los errores
- * de las funciones async, sin necesidad de try/catch en cada controlador.
- */
-export function manejarErrores(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+const NOMBRES_CAMPO: Record<string, string> = {
+  sku: "un producto con ese SKU",
+  email: "un usuario con ese correo",
+  nombre: "una categoría con ese nombre",
+};
+
+/** Manejador central. Express 5 envía aquí también los errores de las funciones async. */
+export function manejarErrores(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof HttpError) {
-    res.status(err.status).json({ error: err.message, detalles: err.detalles });
+    res.status(err.status).json({ error: err.message, codigo: err.codigo, detalles: err.detalles });
     return;
   }
 
-  // Errores conocidos de Prisma
-  const codigo = (err as { code?: string })?.code;
-  if (codigo === "P2002") {
-    res.status(409).json({ error: "Ya existe un registro con ese valor único (por ejemplo, el SKU o el email)" });
+  // Índice único repetido (equivale a violar un UNIQUE en SQL)
+  if (err instanceof MongoServerError && err.code === 11000) {
+    const campo = Object.keys(err.keyValue ?? err.keyPattern ?? {})[0] ?? "valor";
+    res.status(409).json({
+      error: `Ya existe ${NOMBRES_CAMPO[campo] ?? "un registro con ese valor"}`,
+      codigo: "DUPLICADO",
+      detalles: { campo },
+    });
     return;
   }
-  if (codigo === "P2003") {
-    res.status(409).json({ error: "La operación viola una relación con otra tabla (clave foránea)" });
+  // El documento no cumple el validador $jsonSchema (equivale a violar un CHECK)
+  if (err instanceof MongoServerError && err.code === 121) {
+    res.status(422).json({
+      error: "Los datos no cumplen las reglas de la base de datos",
+      codigo: "VALIDACION_BD",
+    });
     return;
   }
-  if (codigo === "P2025") {
-    res.status(404).json({ error: "El registro no existe" });
-    return;
-  }
-  // JSON mal formado en el cuerpo de la petición
-  if ((err as { type?: string })?.type === "entity.parse.failed") {
-    res.status(400).json({ error: "El cuerpo de la petición no es un JSON válido" });
+  // Sin conexión a MongoDB
+  if (err instanceof MongoServerSelectionError || err instanceof MongoNetworkError) {
+    console.error("[BD]", err.message);
+    res.status(503).json({
+      error: "No hay conexión con la base de datos. Intenta de nuevo en unos segundos",
+      codigo: "BD_NO_DISPONIBLE",
+    });
     return;
   }
 
-  console.error(err);
-  res.status(500).json({ error: "Error interno del servidor" });
+  const tipo = (err as { type?: string })?.type;
+  if (tipo === "entity.parse.failed") {
+    res.status(400).json({ error: "El cuerpo de la petición no es un JSON válido", codigo: "JSON_INVALIDO" });
+    return;
+  }
+  if (tipo === "entity.too.large") {
+    res.status(413).json({ error: "La petición es demasiado grande", codigo: "PETICION_GRANDE" });
+    return;
+  }
+
+  console.error(`[${req.method} ${req.originalUrl}]`, err);
+  res.status(500).json({ error: "Ocurrió un error inesperado en el servidor", codigo: "ERROR_INTERNO" });
 }

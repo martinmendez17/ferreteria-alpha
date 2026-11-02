@@ -1,53 +1,100 @@
-# Ferretería Alpha — Base de datos y API REST
+# Ferretería Alpha
 
-Proyecto 1, Entrega 1 · ICI-324 Bases de Datos y Programación Web.
-Stack C: PostgreSQL 18 · Node.js 24 LTS · Express 5 · Prisma ORM 7 (TypeScript).
+Proyecto 1 · Entrega 2 · ICI-324 Bases de Datos y Programación Web · Universidad de Valparaíso
+Equipo: Martín Méndez, Lucas Cárdenas y Diego Ortega
 
-## Qué contiene
+Aplicación web con tres módulos que comparten una base de datos **MongoDB**:
+
+1. **Catálogo público:** buscar, filtrar y ver la ficha de los productos sin iniciar sesión.
+2. **Acceso del personal:** inicio de sesión con dos roles (Administrador y Empleado) y recuperación de contraseña por correo.
+3. **Inventario interno:** entradas y salidas de stock, historial, alertas de stock mínimo, reportes y administración de productos, categorías, proveedores y usuarios.
+
+| Parte | Tecnología |
+|---|---|
+| Frontend | React 19 + Vite, React Router 7, Bootstrap 5 (carpeta `frontend/`) |
+| Backend | Node.js 22+ + Express 5 con TypeScript (carpeta `backend/`) |
+| Base de datos | MongoDB 8 (MongoDB Atlas, plan gratuito M0) con el driver oficial |
+| Seguridad | bcrypt, JWT, límites de uso, helmet, validadores `$jsonSchema` |
+| Correo | Brevo (recuperación de contraseña) |
+
+## Estructura
 
 ```
 ferreteria-alpha/
-├── database/
-│   ├── 01_esquema.sql      Crea las 7 tablas con PK, FK, UNIQUE, CHECK e índices
-│   ├── 02_datos.sql        Datos de prueba (usuarios, 16 productos, 64 movimientos)
-│   ├── 03_consultas.sql    Las 13 consultas del proyecto
-│   └── CONSULTAS.md        Qué requerimiento responde cada consulta + álgebra relacional
-└── backend/
-    ├── prisma/schema.prisma   El modelo de datos para Prisma (mapeado a las tablas SQL)
-    ├── prisma.config.ts       Conexión de Prisma 7 (lee DATABASE_URL)
-    ├── scripts/probar-conexion.ts
-    ├── requests.http          Peticiones de prueba listas para usar
-    └── src/
-        ├── server.ts          Arranca la API (verifica la conexión a la BD antes)
-        ├── app.ts             Configura Express, CORS, JSON y rutas
-        ├── config/            Variables de entorno y cliente de Prisma
-        ├── routes/            Endpoints por recurso (qué URL y qué middlewares)
-        ├── middlewares/       Autenticación JWT, control de rol y manejo de errores
-        ├── controllers/       Leen la petición, validan y responden con su código HTTP
-        ├── services/          Reglas de negocio y acceso a datos (Prisma)
-        └── utils/             Validaciones, errores HTTP y cálculo del estado de stock
+├── backend/
+│   ├── scripts/
+│   │   ├── cargar-base.ts       Crea las 5 colecciones (validadores + índices) y carga los datos de prueba
+│   │   ├── consultas.ts         Las 13 consultas de la Entrega 1 traducidas a MongoDB
+│   │   └── probar-conexion.ts   Muestra la versión de MongoDB y cuántos documentos hay
+│   ├── src/
+│   │   ├── config/              Variables de entorno, conexión y esquema de la base
+│   │   ├── routes/              Todas las rutas de la API
+│   │   ├── middlewares/         Sesión (JWT), roles, límites de uso y manejo de errores
+│   │   ├── controllers/         Leen y validan la petición; responden con su código HTTP
+│   │   ├── services/            Reglas de negocio y consultas a MongoDB (transacciones, $lookup, $group)
+│   │   ├── datos/semilla.ts     Datos de prueba
+│   │   └── utils/               Validaciones, fechas en hora de Chile, estado del stock
+│   └── requests.http            20 peticiones de prueba, incluidas las que deben fallar
+├── frontend/
+│   ├── public/img/productos/    Imágenes de los productos de prueba
+│   └── src/
+│       ├── api/                 Cliente de la API y tipos de datos
+│       ├── contexto/            Sesión y avisos
+│       ├── disenos/             Plantillas de la zona pública e interna
+│       ├── componentes/         Ventanas, formularios y piezas reutilizables
+│       └── paginas/             Una pantalla por archivo (publico/ e interno/)
+├── mongodb/
+│   ├── consultas.mongodb.js     Las 13 consultas para pegar en mongosh o Compass
+│   └── ejemplos/                Un documento JSON de ejemplo por colección
+├── docs/API.md                  Documentación de la API REST
+└── render.yaml                  Configuración para publicar la API en Render
 ```
 
-## 1. Requisitos
+## Cómo ejecutarlo en tu computador (Windows)
 
-- **Node.js 24 LTS** — https://nodejs.org
-- **PostgreSQL 18** instalado localmente (incluye pgAdmin), **o** una base gratuita en **Neon** (https://neon.tech).
+### 1. Programas
 
-## 2. Crear la base de datos
+- **Node.js 22 o 24 LTS** — https://nodejs.org
+- **VS Code** (recomendado, con la extensión *REST Client* para `requests.http`)
+- **Git** — https://git-scm.com
 
-**Con psql (terminal):**
+### 2. Base de datos en MongoDB Atlas (gratis, no hay que instalar nada)
+
+1. Crea una cuenta en https://www.mongodb.com/cloud/atlas y un clúster **M0 (Free)**.
+2. En *Database Access*, crea un usuario con contraseña (anótala).
+3. En *Network Access*, agrega `0.0.0.0/0` (permitir desde cualquier lugar; lo necesita Render).
+4. En *Connect › Drivers*, copia la dirección `mongodb+srv://…`.
+
+> Se usa Atlas porque las transacciones (movimiento + stock juntos) necesitan un *replica set*, y Atlas ya lo trae, incluso en el plan gratuito.
+
+### 3. Backend
 
 ```bash
-createdb ferreteria_alpha
-psql -d ferreteria_alpha -f database/01_esquema.sql
-psql -d ferreteria_alpha -f database/02_datos.sql
+cd backend
+copy .env.example .env        # en Mac/Linux: cp .env.example .env
 ```
 
-**Con pgAdmin:** crea la base `ferreteria_alpha`, abre *Query Tool*, carga `01_esquema.sql` y ejecútalo (F5); luego haz lo mismo con `02_datos.sql`.
+Abre `backend/.env` y completa `MONGODB_URI` (con tu usuario y contraseña de Atlas) y un `JWT_SECRET` largo inventado. Luego:
 
-**Con Neon:** crea un proyecto, abre el *SQL Editor* y pega el contenido de `01_esquema.sql` y luego el de `02_datos.sql`.
+```bash
+npm install
+npm run db:cargar      # crea las colecciones y carga los datos de prueba
+npm run dev            # API en http://localhost:3000
+```
 
-Usuarios de prueba:
+Abre http://localhost:3000/api/salud: debe decir `"baseDeDatos": "conectada"`.
+
+### 4. Frontend (en otra terminal)
+
+```bash
+cd frontend
+npm install
+npm run dev            # página en http://localhost:5173
+```
+
+Si la API no está en `http://localhost:3000/api`, crea `frontend/.env.local` con `VITE_API_URL=<dirección>/api`.
+
+### Usuarios de prueba
 
 | Correo | Contraseña | Rol |
 |---|---|---|
@@ -55,91 +102,34 @@ Usuarios de prueba:
 | juan.perez@alpha.cl | Vendedor123! | Empleado |
 | ana.rojas@alpha.cl | Vendedor123! | Empleado |
 
-## 3. Levantar la API
+## Comandos del backend
 
-```bash
-cd backend
-cp .env.example .env          # en Windows: copy .env.example .env
-# edita .env: DATABASE_URL con tu usuario y clave de PostgreSQL, y un JWT_SECRET propio
-npm install
-# npm 11 o superior no ejecuta los scripts de instalación hasta aprobarlos.
-# Si npm install avisa "install-scripts", aprueba estos tres y vuelve a instalar:
-npm install-scripts approve prisma @prisma/engines esbuild
-npm install
-npx prisma generate           # genera el cliente de Prisma en backend/generated/
-npm run db:probar             # muestra la versión de PostgreSQL y cuántas filas tiene cada tabla
-npm run dev                   # API en http://localhost:3000
-```
-
-Abre http://localhost:3000/api/salud: debe responder `"baseDeDatos": "conectada"`.
-
-> No ejecutes `prisma migrate` ni `prisma db pull`: las tablas las crea `01_esquema.sql` (con los CHECK que
-> Prisma no puede declarar) y `schema.prisma` ya está escrito para esas tablas.
-
-## 4. Endpoints
-
-| Método | Ruta | Acceso | Requerimiento |
-|---|---|---|---|
-| GET | /api/salud | Público | Conexión a la BD |
-| GET | /api/productos?q=&categoria=&precioMin=&precioMax=&soloStock=true&pagina= | Público | RF01–RF03 |
-| GET | /api/productos/:id | Público | RF04 |
-| GET | /api/categorias | Público | RF03 |
-| POST | /api/auth/login | Público | RF05 |
-| GET | /api/auth/perfil | Sesión | RF08 |
-| GET | /api/inventario?q=&estado=critico | Sesión | RF14 |
-| GET | /api/inventario/resumen | Sesión | RF14 |
-| GET | /api/inventario/alertas | Sesión | RF14 (consulta C08) |
-| POST | /api/movimientos | Sesión | RF10–RF12 |
-| GET | /api/movimientos?producto=&limite= | Sesión | RF13 |
-| POST · PUT · PATCH /:id/baja | /api/productos | Administrador | RF09 |
-| POST · DELETE | /api/categorias | Administrador | RF15 |
-| GET · POST · DELETE | /api/proveedores | Sesión / Administrador | RF15 |
-| GET · POST · PATCH /:id/estado | /api/usuarios | Administrador | RF16 |
-
-Las rutas con sesión requieren el encabezado `Authorization: Bearer <token>` (el token lo entrega el login).
-El archivo `backend/requests.http` tiene 17 peticiones de ejemplo, incluidas las que deben fallar (401, 409, 422).
-Se usan con la extensión *REST Client* de VS Code; también sirven como guía para Postman o Thunder Client.
-
-Ejemplo con curl:
-
-```bash
-curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" \
-     -d '{"email":"maria.gonzalez@alpha.cl","password":"Admin123!"}'
-```
-
-## 5. Las 13 consultas
-
-> Ejecútalas sobre una base recién cargada (`01_esquema.sql` y luego `02_datos.sql`) y en el orden del archivo:
-> algunas dependen de las anteriores, y si se ejecutan dos veces fallan a propósito (SKU repetido, columna que ya existe).
-
-```bash
-psql -d ferreteria_alpha -f database/03_consultas.sql
-```
-
-`database/CONSULTAS.md` explica cada una y trae los SELECT en álgebra relacional.
-Las consultas modifican datos (insertan, borran, alteran tablas); para volver al estado inicial,
-ejecuta otra vez `01_esquema.sql` y `02_datos.sql`.
-
-## 6. Guion sugerido para la presentación
-
-| Ítem de la rúbrica | Qué mostrar |
+| Comando | Qué hace |
 |---|---|
-| Construcción de Backend | La carpeta `backend/src`: una petición entra por `routes`, pasa por `middlewares`, la atiende un `controller` y la lógica vive en `services`. |
-| Conexión a Base de Datos | `npm run db:probar` y luego `GET /api/salud` en el navegador. |
-| Consultas (mínimo 10) | Ejecutar `03_consultas.sql` en pgAdmin, consulta por consulta. |
-| Modelo relacional ↔ consultas | `CONSULTAS.md`: cada consulta con su requerimiento; mostrar que `/api/inventario/alertas` ejecuta la misma C08. |
-| Integridad | El borrado de “Plomería” falla (FK) y el stock negativo falla (CHECK); en la API, la salida de 500 unidades responde 422. |
+| `npm run dev` | Inicia la API y la reinicia al guardar cambios |
+| `npm start` | Inicia la API (se usa en Render) |
+| `npm run db:cargar` | Borra y vuelve a crear la base con los datos de prueba |
+| `npm run db:probar` | Prueba la conexión y cuenta los documentos |
+| `npm run db:consultas` | Ejecuta las 13 consultas en orden y muestra sus resultados |
+| `npm run db:consultas -- --exportar` | Regenera `mongodb/consultas.mongodb.js` |
+| `npm run typecheck` | Revisa los tipos de TypeScript |
+
+## Recuperación de contraseña por correo
+
+Sin configurar nada, en tu computador el enlace se muestra en la consola del backend y también en la pantalla (modo de prueba). Para que llegue un correo de verdad:
+
+1. Crea una cuenta gratis en https://www.brevo.com.
+2. En *Senders, Domains & Dedicated IPs › Senders*, agrega y verifica tu correo (ej. tu Gmail).
+3. En *SMTP & API › API Keys*, crea una clave.
+4. En `backend/.env` completa `BREVO_API_KEY` y `CORREO_REMITENTE` (el correo verificado).
+
+Los correos de prueba (`@alpha.cl`) no existen: para probarlo, crea un usuario con tu correo real desde *Usuarios y roles*.
 
 ## Solución de problemas
 
-- **Windows: `npm : No se puede cargar el archivo ... npm.ps1 porque la ejecución de scripts está deshabilitada`**:
-  ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` en PowerShell, o usa la terminal *Command Prompt* de VS Code.
-- **`npm install` muestra avisos de `install-scripts` y luego `prisma generate` falla**: ejecuta
-  `npm install-scripts approve prisma @prisma/engines esbuild` y otra vez `npm install`.
-- **`npm error ENOENT ... package.json`**: la terminal no está en la carpeta `backend`; ejecuta `cd backend`.
-
-- **`Falta la variable de entorno DATABASE_URL`**: no existe `backend/.env` o está vacío.
-- **`password authentication failed`**: el usuario o la clave de `DATABASE_URL` no son los de tu PostgreSQL.
-  Revisa que la clave reemplace a la palabra `postgres` que va antes de `@` (no que quede pegada a ella) y guarda el archivo.
-- **`Cannot find module '../../generated/prisma/client'`**: falta ejecutar `npx prisma generate`.
-- **`relation "producto" does not exist`**: la base está vacía; ejecuta `01_esquema.sql` y `02_datos.sql`.
+- **`querySrv ENOTFOUND` o `Server selection timed out`:** revisa `MONGODB_URI` y que en Atlas *Network Access* esté tu IP o `0.0.0.0/0`.
+- **`bad auth : authentication failed`:** el usuario o la contraseña de Atlas en `MONGODB_URI` están mal. Si la contraseña tiene símbolos como `@` o `#`, cámbiala por una sin símbolos.
+- **`Transaction numbers are only allowed on a replica set`:** estás usando un MongoDB local sin replica set; usa Atlas.
+- **`npm : No se puede cargar el archivo npm.ps1`:** ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` en PowerShell.
+- **La página muestra "No se pudo conectar con el servidor":** el backend no está corriendo o `VITE_API_URL` apunta a otra dirección.
+- **No subas el archivo `.env`** ni lo compartas: tiene las claves. Ya está en `.gitignore`.

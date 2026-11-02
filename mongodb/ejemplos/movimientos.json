@@ -1,16 +1,25 @@
 {
-  "_id": { "$oid": "6710a1f0c2e4b81a2c000401" },
+  "_id": {
+    "$oid": "6710a1f0c2e4b81a2c000401"
+  },
   "tipoMovimiento": "salida",
   "cantidad": 4,
   "motivo": "Venta",
-  "fechaHora": { "$date": "2026-10-12T13:05:00Z" },
+  "fechaHora": {
+    "$date": "2026-10-12T13:05:00Z"
+  },
+  "stockResultante": 52,
   "producto": {
-    "_id": { "$oid": "6710a1f0c2e4b81a2c000301" },
+    "_id": {
+      "$oid": "6710a1f0c2e4b81a2c000301"
+    },
     "sku": "HER-0016",
     "nombre": "Martillo carpintero 16 oz"
   },
   "usuario": {
-    "_id": { "$oid": "6710a1f0c2e4b81a2c000003" },
+    "_id": {
+      "$oid": "6710a1f0c2e4b81a2c000003"
+    },
     "nombreCompleto": "Ana Rojas"
   }
 }

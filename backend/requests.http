@@ -1,84 +1,114 @@
-### Peticiones de prueba para la extensión "REST Client" de VS Code.
-### Ejecuta primero el login y copia el token en @token.
+### Peticiones de prueba (extensión "REST Client" de VS Code: clic en "Send Request")
+### Incluye las que deben fallar, para mostrar cada código de error.
 
 @api = http://localhost:3000/api
-@token = pega-aqui-el-token
+@martillo = 6710a1f0c2e4b81a2c000301
+@tornillo = 6710a1f0c2e4b81a2c000308
+@plomeria = 6710a1f0c2e4b81a2c000103
 
-### 1. Salud: API arriba y conectada a PostgreSQL
+### 1. Estado de la API y de MongoDB (200)
 GET {{api}}/salud
 
-### 2. Catálogo público con filtros (RF01–RF03)
-GET {{api}}/productos?q=martillo&soloStock=true
+### 2. Catálogo con filtros (200)
+GET {{api}}/productos?q=martillo&soloStock=true&orden=precio_asc
 
-### 3. Catálogo por categoría y rango de precio
-GET {{api}}/productos?categoria=1&precioMin=2000&precioMax=10000
+### 3. Ficha de producto (200)
+GET {{api}}/productos/{{martillo}}
 
-### 4. Ficha de producto (RF04)
-GET {{api}}/productos/1
+### 4. Id mal escrito (400)
+GET {{api}}/productos/abc
 
-### 5. Login (RF05) — Administrador
+### 5. Producto que no existe (404)
+GET {{api}}/productos/6710a1f0c2e4b81a2c999999
+
+### 6. Login correcto (200): copia el token en @token
+# @name login
 POST {{api}}/auth/login
 Content-Type: application/json
 
 { "email": "maria.gonzalez@alpha.cl", "password": "Admin123!" }
 
-### 6. Login con contraseña incorrecta → 401
+###
+@token = {{login.response.body.token}}
+
+### 7. Login con contraseña incorrecta (401)
 POST {{api}}/auth/login
 Content-Type: application/json
 
 { "email": "maria.gonzalez@alpha.cl", "password": "otra" }
 
-### 7. Inventario sin token → 401 (RF08)
+### 8. Inventario sin token (401)
 GET {{api}}/inventario
 
-### 8. Inventario con token
+### 9. Inventario: primero los que requieren atención (200)
 GET {{api}}/inventario
 Authorization: Bearer {{token}}
 
-### 9. Indicadores del panel
-GET {{api}}/inventario/resumen
-Authorization: Bearer {{token}}
-
-### 10. Productos en stock crítico (RF14)
-GET {{api}}/inventario/alertas
-Authorization: Bearer {{token}}
-
-### 11. Registrar salida válida (RF11) → 201
+### 10. Salida válida (201)
 POST {{api}}/movimientos
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "idProducto": 1, "tipoMovimiento": "salida", "cantidad": 2, "motivo": "Venta" }
+{ "idProducto": "{{tornillo}}", "tipoMovimiento": "salida", "cantidad": 2, "motivo": "Venta" }
 
-### 12. Salida mayor al stock (RF12) → 422
+### 11. Salida mayor que el stock (422 STOCK_INSUFICIENTE)
 POST {{api}}/movimientos
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "idProducto": 8, "tipoMovimiento": "salida", "cantidad": 500, "motivo": "Venta" }
+{ "idProducto": "{{tornillo}}", "tipoMovimiento": "salida", "cantidad": 500, "motivo": "Venta" }
 
-### 13. Entrada de stock (RF10)
+### 12. Motivo que no corresponde al tipo (422)
 POST {{api}}/movimientos
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "idProducto": 8, "tipoMovimiento": "entrada", "cantidad": 40, "motivo": "Compra a proveedor" }
+{ "idProducto": "{{tornillo}}", "tipoMovimiento": "entrada", "cantidad": 5, "motivo": "Venta" }
 
-### 14. Historial (kardex) de un producto (RF13)
-GET {{api}}/movimientos?producto=8
+### 13. Historial de un producto (200)
+GET {{api}}/movimientos?producto={{tornillo}}
 Authorization: Bearer {{token}}
 
-### 15. Crear producto (RF09, solo Administrador)
+### 14. Borrar una categoría con productos (409)
+DELETE {{api}}/categorias/{{plomeria}}
+Authorization: Bearer {{token}}
+
+### 15. SKU repetido (409 DUPLICADO)
 POST {{api}}/productos
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "sku": "HER-0500", "nombre": "Serrucho 20\"", "precioVenta": 9990, "idCategoria": 1, "idProveedor": 2, "unidadMedida": "unidad", "stockMinimo": 5, "ubicacionBodega": "Pasillo 1-B" }
+{ "sku": "HER-0016", "nombre": "Otro martillo", "idCategoria": "6710a1f0c2e4b81a2c000101", "precioVenta": 5000, "unidadMedida": "unidad", "stockMinimo": 2 }
 
-### 16. Eliminar categoría con productos → 409 (integridad referencial)
-DELETE {{api}}/categorias/3
+### 16. Reporte con $lookup y $group (200)
+GET {{api}}/reportes/mas-salidas?desde=2026-09-01&hasta=2026-12-31
 Authorization: Bearer {{token}}
 
-### 17. Listar usuarios (RF16, solo Administrador)
-GET {{api}}/usuarios
-Authorization: Bearer {{token}}
+### 17. Empleado intenta crear un usuario (403): primero inicia sesión como juan.perez
+# @name loginEmpleado
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "juan.perez@alpha.cl", "password": "Vendedor123!" }
+
+###
+POST {{api}}/usuarios
+Authorization: Bearer {{loginEmpleado.response.body.token}}
+Content-Type: application/json
+
+{ "nombreCompleto": "Prueba", "email": "prueba@alpha.cl", "password": "Prueba123", "rol": "Empleado" }
+
+### 18. JSON mal escrito (400)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "maria.gonzalez@alpha.cl", "password":
+
+### 19. Ruta que no existe (404)
+GET {{api}}/no-existe
+
+### 20. Recuperar contraseña (200, siempre el mismo mensaje)
+POST {{api}}/auth/recuperar
+Content-Type: application/json
+
+{ "email": "maria.gonzalez@alpha.cl" }
