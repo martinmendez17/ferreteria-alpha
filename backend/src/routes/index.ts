@@ -53,6 +53,9 @@ api.get("/inventario/alertas", requiereSesion, inv.alertas);
 api.get("/movimientos", requiereSesion, inv.historial);
 api.post("/movimientos", requiereSesion, inv.registrar);
 
+// Reportes: consultas con $lookup (JOIN), $group (GROUP BY) y operadores
+api.get("/reportes", requiereSesion, inv.listarReportes);
+api.get("/reportes/:id", requiereSesion, inv.ejecutarReporte);
 
 // Usuarios (RF16)
 api.get("/usuarios", requiereSesion, soloAdmin, usu.listar);

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import * as inventario from "../services/inventario.service";
 import * as movimientos from "../services/movimientos.service";
+import * as reportes from "../services/reportes.service";
 import { TIPOS_MOVIMIENTO } from "../types/modelos";
 import { ESTADOS_STOCK } from "../utils/estadoStock";
 import { peticionInvalida } from "../utils/httpError";
@@ -61,4 +62,14 @@ export async function historial(req: Request, res: Response) {
       hasta,
     }),
   );
+}
+
+/* Reportes */
+
+export function listarReportes(_req: Request, res: Response) {
+  res.json(reportes.listarReportes());
+}
+
+export async function ejecutarReporte(req: Request, res: Response) {
+  res.json(await reportes.ejecutarReporte(String(req.params["id"]), req.query as Record<string, unknown>));
 }
