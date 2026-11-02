@@ -1,0 +1,84 @@
+### Peticiones de prueba para la extensión "REST Client" de VS Code.
+### Ejecuta primero el login y copia el token en @token.
+
+@api = http://localhost:3000/api
+@token = pega-aqui-el-token
+
+### 1. Salud: API arriba y conectada a PostgreSQL
+GET {{api}}/salud
+
+### 2. Catálogo público con filtros (RF01–RF03)
+GET {{api}}/productos?q=martillo&soloStock=true
+
+### 3. Catálogo por categoría y rango de precio
+GET {{api}}/productos?categoria=1&precioMin=2000&precioMax=10000
+
+### 4. Ficha de producto (RF04)
+GET {{api}}/productos/1
+
+### 5. Login (RF05) — Administrador
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "maria.gonzalez@alpha.cl", "password": "Admin123!" }
+
+### 6. Login con contraseña incorrecta → 401
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "maria.gonzalez@alpha.cl", "password": "otra" }
+
+### 7. Inventario sin token → 401 (RF08)
+GET {{api}}/inventario
+
+### 8. Inventario con token
+GET {{api}}/inventario
+Authorization: Bearer {{token}}
+
+### 9. Indicadores del panel
+GET {{api}}/inventario/resumen
+Authorization: Bearer {{token}}
+
+### 10. Productos en stock crítico (RF14)
+GET {{api}}/inventario/alertas
+Authorization: Bearer {{token}}
+
+### 11. Registrar salida válida (RF11) → 201
+POST {{api}}/movimientos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "idProducto": 1, "tipoMovimiento": "salida", "cantidad": 2, "motivo": "Venta" }
+
+### 12. Salida mayor al stock (RF12) → 422
+POST {{api}}/movimientos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "idProducto": 8, "tipoMovimiento": "salida", "cantidad": 500, "motivo": "Venta" }
+
+### 13. Entrada de stock (RF10)
+POST {{api}}/movimientos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "idProducto": 8, "tipoMovimiento": "entrada", "cantidad": 40, "motivo": "Compra a proveedor" }
+
+### 14. Historial (kardex) de un producto (RF13)
+GET {{api}}/movimientos?producto=8
+Authorization: Bearer {{token}}
+
+### 15. Crear producto (RF09, solo Administrador)
+POST {{api}}/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sku": "HER-0500", "nombre": "Serrucho 20\"", "precioVenta": 9990, "idCategoria": 1, "idProveedor": 2, "unidadMedida": "unidad", "stockMinimo": 5, "ubicacionBodega": "Pasillo 1-B" }
+
+### 16. Eliminar categoría con productos → 409 (integridad referencial)
+DELETE {{api}}/categorias/3
+Authorization: Bearer {{token}}
+
+### 17. Listar usuarios (RF16, solo Administrador)
+GET {{api}}/usuarios
+Authorization: Bearer {{token}}

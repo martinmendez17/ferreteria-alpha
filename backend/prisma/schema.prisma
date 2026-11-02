@@ -1,0 +1,103 @@
+// Modelo de datos de Ferretería Alpha para Prisma ORM 7.
+//
+// Las tablas se crean con database/01_esquema.sql (que además declara los
+// CHECK, que Prisma no puede expresar). Este archivo describe esas mismas
+// tablas para generar el cliente tipado: NO ejecutar "prisma migrate".
+//
+// PostgreSQL guarda en minúsculas los nombres escritos sin comillas
+// (idUsuario -> idusuario). Con @map y @@map el código usa los nombres
+// del informe y Prisma los traduce a los de la base.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Rol {
+  idRol     Int       @id @default(autoincrement()) @map("idrol")
+  nombreRol String    @unique @map("nombrerol") @db.VarChar(30)
+  usuarios  Usuario[]
+
+  @@map("rol")
+}
+
+model Usuario {
+  idUsuario      Int                    @id @default(autoincrement()) @map("idusuario")
+  nombreCompleto String                 @map("nombrecompleto") @db.VarChar(120)
+  email          String                 @unique @db.VarChar(150)
+  passwordHash   String                 @map("passwordhash") @db.VarChar(255)
+  idRol          Int                    @map("idrol")
+  estado         String                 @default("activo") @db.VarChar(10)
+  fechaCreacion  DateTime               @default(now()) @map("fechacreacion") @db.Timestamp(6)
+  rol            Rol                    @relation(fields: [idRol], references: [idRol], onDelete: Restrict)
+  movimientos    MovimientoInventario[]
+
+  @@map("usuario")
+}
+
+model Categoria {
+  idCategoria Int        @id @default(autoincrement()) @map("idcategoria")
+  nombre      String     @unique @db.VarChar(80)
+  descripcion String?    @db.VarChar(255)
+  productos   Producto[]
+
+  @@map("categoria")
+}
+
+model Proveedor {
+  idProveedor Int        @id @default(autoincrement()) @map("idproveedor")
+  razonSocial String     @map("razonsocial") @db.VarChar(120)
+  telefono    String?    @db.VarChar(20)
+  email       String?    @db.VarChar(150)
+  productos   Producto[]
+
+  @@map("proveedor")
+}
+
+model Producto {
+  idProducto   Int                    @id @default(autoincrement()) @map("idproducto")
+  sku          String                 @unique @db.VarChar(40)
+  nombre       String                 @db.VarChar(150)
+  descripcion  String?
+  precioVenta  Decimal                @map("precioventa") @db.Decimal(10, 2)
+  idCategoria  Int                    @map("idcategoria")
+  idProveedor  Int?                   @map("idproveedor")
+  unidadMedida String                 @map("unidadmedida") @db.VarChar(20)
+  stockMinimo  Int                    @default(0) @map("stockminimo")
+  estado       String                 @default("activo") @db.VarChar(15)
+  categoria    Categoria              @relation(fields: [idCategoria], references: [idCategoria], onDelete: Restrict)
+  proveedor    Proveedor?             @relation(fields: [idProveedor], references: [idProveedor], onDelete: Restrict)
+  inventario   Inventario?
+  movimientos  MovimientoInventario[]
+
+  @@map("producto")
+}
+
+model Inventario {
+  idInventario       Int      @id @default(autoincrement()) @map("idinventario")
+  idProducto         Int      @unique @map("idproducto")
+  stockActual        Int      @default(0) @map("stockactual")
+  ubicacionBodega    String?  @map("ubicacionbodega") @db.VarChar(60)
+  fechaActualizacion DateTime @default(now()) @map("fechaactualizacion") @db.Timestamp(6)
+  producto           Producto @relation(fields: [idProducto], references: [idProducto], onDelete: Restrict)
+
+  @@map("inventario")
+}
+
+model MovimientoInventario {
+  idMovimiento   Int      @id @default(autoincrement()) @map("idmovimiento")
+  idProducto     Int      @map("idproducto")
+  idUsuario      Int      @map("idusuario")
+  tipoMovimiento String   @map("tipomovimiento") @db.VarChar(10)
+  cantidad       Int
+  motivo         String   @db.VarChar(100)
+  fechaHora      DateTime @default(now()) @map("fechahora") @db.Timestamp(6)
+  producto       Producto @relation(fields: [idProducto], references: [idProducto], onDelete: Restrict)
+  usuario        Usuario  @relation(fields: [idUsuario], references: [idUsuario], onDelete: Restrict)
+
+  @@map("movimiento_inventario")
+}
