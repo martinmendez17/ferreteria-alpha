@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api } from "../../api/cliente";
 import type { Categoria, Paginado, ProductoPublico } from "../../api/tipos";
@@ -19,7 +19,8 @@ const POR_PAGINA = 8;
 const soloDigitos = (t: string) => t.replace(/\D/g, "").slice(0, 9);
 const formatoPrecio = (t: string) => (t ? `$${numero(Number(t))}` : "");
 
-/** RF01–RF03: catálogo con búsqueda, filtros por categoría, precio y stock, orden y paginación. */
+/** RF01–RF03: catálogo con búsqueda, filtros por categoría, precio y stock, orden y paginación.
+ *  La búsqueda está en el mismo panel que los filtros: se aplica con Enter o con "Aplicar filtros". */
 export function Catalogo() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
@@ -31,11 +32,11 @@ export function Catalogo() {
   const pagina = Number(params.get("pagina") ?? 1) || 1;
 
   // Filtros "en edición": se aplican al presionar "Aplicar filtros"
-  const [borrador, setBorrador] = useState({ cats, min, max, soloStock });
+  const [borrador, setBorrador] = useState({ q, cats, min, max, soloStock });
   const [panelMovil, setPanelMovil] = useState(false);
   useEffect(() => {
-    setBorrador({ cats, min, max, soloStock });
-  }, [cats, min, max, soloStock]);
+    setBorrador({ q, cats, min, max, soloStock });
+  }, [q, cats, min, max, soloStock]);
 
   useEffect(() => {
     document.title = q ? `“${q}” · Ferretería Alpha` : "Catálogo · Ferretería Alpha";
@@ -61,25 +62,39 @@ export function Catalogo() {
     setParams(nuevos);
   }
 
-  function aplicar() {
+  function aplicar(e?: FormEvent) {
+    e?.preventDefault();
     const minN = borrador.min, maxN = borrador.max;
     // Si el rango viene al revés, se ordena solo
     const [a, b] = minN && maxN && Number(minN) > Number(maxN) ? [maxN, minN] : [minN, maxN];
-    cambiar({ cat: borrador.cats.join(",") || null, min: a || null, max: b || null, stock: borrador.soloStock ? "1" : null });
+    cambiar({ q: borrador.q.trim() || null, cat: borrador.cats.join(",") || null, min: a || null, max: b || null, stock: borrador.soloStock ? "1" : null });
     setPanelMovil(false);
   }
 
   function limpiar() {
-    setParams(q ? { q } : {});
+    setParams(orden !== "nombre_asc" ? { orden } : {});
     setPanelMovil(false);
   }
 
-  const filtrosActivos = cats.length + (min ? 1 : 0) + (max ? 1 : 0) + (soloStock ? 1 : 0);
+  const filtrosActivos = (q ? 1 : 0) + cats.length + (min ? 1 : 0) + (max ? 1 : 0) + (soloStock ? 1 : 0);
   const listaCategorias = (categorias.datos ?? []).filter((c) => c.productosActivos > 0 || cats.includes(c._id));
   const datos = productos.datos;
 
   const panelFiltros = (
-    <div className="panel-filtros">
+    <form className="panel-filtros" role="search" onSubmit={aplicar}>
+      <label htmlFor="buscar" className="etiqueta d-block mb-2">Buscar</label>
+      <div className="buscador-filtros mb-4">
+        <input
+          id="buscar"
+          className="form-control"
+          type="search"
+          placeholder="Nombre, código, marca…"
+          value={borrador.q}
+          onChange={(e) => setBorrador((b) => ({ ...b, q: e.target.value }))}
+          maxLength={100}
+        />
+      </div>
+
       <div className="etiqueta mb-3">Categorías</div>
       {categorias.cargando && <div className="esqueleto mb-2" style={{ height: 120 }} />}
       {listaCategorias.map((c) => (
@@ -115,10 +130,10 @@ export function Catalogo() {
       </div>
 
       <div className="d-flex gap-2 mt-4">
-        <button type="button" className="btn btn-primary flex-grow-1" onClick={aplicar}>Aplicar filtros</button>
+        <button type="submit" className="btn btn-primary flex-grow-1">Aplicar filtros</button>
         <button type="button" className="btn btn-secundario" onClick={limpiar}>Limpiar</button>
       </div>
-    </div>
+    </form>
   );
 
   return (
@@ -127,9 +142,9 @@ export function Catalogo() {
 
       {panelMovil && (
         <div className="fondo-modal p-0" onMouseDown={(e) => e.target === e.currentTarget && setPanelMovil(false)}>
-          <div className="panel-lateral" role="dialog" aria-modal="true" aria-label="Filtros">
+          <div className="panel-lateral" role="dialog" aria-modal="true" aria-label="Buscar y filtrar">
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h2 className="subtitulo">Filtros</h2>
+              <h2 className="subtitulo">Buscar y filtrar</h2>
               <button type="button" className="btn-cerrar" aria-label="Cerrar filtros" onClick={() => setPanelMovil(false)}>×</button>
             </div>
             {panelFiltros}
@@ -157,7 +172,7 @@ export function Catalogo() {
           </div>
           <div className="d-flex gap-2 align-items-center col-12 col-md-auto">
             <button type="button" className="btn btn-secundario d-lg-none flex-grow-1" onClick={() => setPanelMovil(true)}>
-              Filtros ({filtrosActivos})
+              Buscar y filtrar{filtrosActivos > 0 ? ` (${filtrosActivos})` : ""}
             </button>
             <label htmlFor="orden" className="texto-secundario text-nowrap d-none d-md-inline ms-auto">Ordenar por</label>
             <select id="orden" className="form-select w-auto flex-grow-1 flex-md-grow-0" value={orden} onChange={(e) => cambiar({ orden: e.target.value })}>
@@ -221,7 +236,7 @@ export function TarjetaProducto({ p, compacta = false }: { p: ProductoPublico; c
       <div className="cuerpo">
         {!compacta && <div><EtiquetaDisponibilidad valor={p.disponibilidad} /></div>}
         <Link to={`/producto/${p._id}`} className="nombre">{p.nombre}</Link>
-        {!compacta && <div className="texto-secundario small sku">SKU {p.sku}</div>}
+        {!compacta && <div className="texto-secundario small sku codigo">SKU {p.sku}</div>}
         <div className="pie">
           <span className="precio tabular">{dinero(p.precioVenta)}</span>
           {compacta ? <EtiquetaDisponibilidad valor={p.disponibilidad} /> : <span className="btn btn-secundario btn-sm btn-ficha" aria-hidden="true">Ver ficha</span>}

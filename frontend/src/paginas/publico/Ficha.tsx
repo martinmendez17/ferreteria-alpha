@@ -69,9 +69,9 @@ export function Ficha() {
               <EtiquetaDisponibilidad valor={p.disponibilidad} />
               <Link to={`/?cat=${p.categoria._id}`} className="estado estado-info estado-sin-punto text-decoration-none">{p.categoria.nombre}</Link>
             </div>
-            <h1 className="titulo" style={{ fontSize: "2rem" }}>{p.nombre}</h1>
+            <h1 className="titulo titulo-ficha">{p.nombre}</h1>
             <p className="texto-secundario mt-2 mb-3" style={{ fontSize: "1rem" }}>
-              SKU {p.sku}
+              SKU <span className="codigo">{p.sku}</span>
               {p.marca && <> · Marca: {p.marca}</>} · Unidad de venta: {p.unidadMedida}
             </p>
             <div className="precio-grande tabular mb-3">{dinero(p.precioVenta)}</div>

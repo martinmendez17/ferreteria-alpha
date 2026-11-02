@@ -1,7 +1,11 @@
 /*
  * Guía de estilo de Ferretería Alpha (bocetos del Control 2)
  * Azul marino: barra y menú · Azul petróleo: acción principal · Naranjo: solo logo y "ADMIN"
- * Letra Inter: título 28 · subtítulo 20 · texto 14 · etiqueta 12
+ * Tres letras con roles distintos:
+ *   Barlow Semi Condensed (títulos, logo, precios y cifras): firme y compacta, como un rótulo de ferretería
+ *   Inter (texto, botones, formularios y tablas): cómoda de leer en tamaño pequeño
+ *   JetBrains Mono (códigos SKU y consultas): cada carácter ocupa lo mismo, así los códigos se alinean
+ * Tamaños: título 32 · subtítulo 22 · texto 14 · etiqueta 12
  */
 :root {
   --fa-marino: #0f2a44;
@@ -28,6 +32,8 @@
   --fa-info-texto: #17566c;
   --fa-info-borde: #a9cfdc;
 
+  --fa-letra-titulos: "Barlow Semi Condensed", "Inter", system-ui, sans-serif;
+  --fa-letra-codigo: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --bs-body-font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --bs-body-font-size: 0.875rem; /* 14 px */
   --bs-body-color: var(--fa-grafito);
@@ -49,14 +55,17 @@ body {
 }
 
 /* ---------- Tipografía ---------- */
-.titulo { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
-.subtitulo { font-size: 1.25rem; font-weight: 700; margin: 0; }
+h1, h2, h3, h4 { font-family: var(--fa-letra-titulos); }
+.titulo { font-family: var(--fa-letra-titulos); font-size: 2rem; font-weight: 700; line-height: 1.1; margin: 0; }
+.titulo-ficha { font-size: 2.4rem; }
+.subtitulo { font-family: var(--fa-letra-titulos); font-size: 1.375rem; font-weight: 600; line-height: 1.2; margin: 0; }
 .etiqueta {
   font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fa-gris);
 }
 .texto-secundario { color: var(--fa-gris); }
 .tabular { font-variant-numeric: tabular-nums; }
-code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code, pre { font-family: var(--fa-letra-codigo); }
+.codigo { font-family: var(--fa-letra-codigo); font-size: 0.92em; letter-spacing: 0; }
 
 /* ---------- Botones ---------- */
 .btn { font-weight: 600; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; }
@@ -99,7 +108,7 @@ code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, 
 .superficie { background: #fff; border: 1px solid var(--fa-borde); border-radius: 0.75rem; }
 .kpi { background: #fff; border: 1px solid var(--fa-borde); border-radius: 0.75rem; padding: 1rem 1.25rem; height: 100%; }
 .kpi .kpi-etiqueta { color: var(--fa-gris); font-size: 0.875rem; }
-.kpi .kpi-valor { font-size: 1.85rem; font-weight: 700; line-height: 1.2; margin-top: 0.25rem; }
+.kpi .kpi-valor { font-family: var(--fa-letra-titulos); font-size: 2.2rem; font-weight: 700; line-height: 1.1; margin-top: 0.25rem; }
 .kpi.kpi-alerta { border-color: var(--fa-alerta-borde); }
 .kpi.kpi-alerta .kpi-valor { color: var(--fa-alerta-texto); }
 
@@ -136,7 +145,7 @@ code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, 
 .stock-bajo, .tabla td.stock-bajo { color: var(--fa-error-texto); font-weight: 700; }
 
 /* ---------- Logo ---------- */
-.logo { display: inline-flex; align-items: center; gap: 0.6rem; color: #fff; text-decoration: none; font-weight: 700; font-size: 1.2rem; }
+.logo { display: inline-flex; align-items: center; gap: 0.6rem; color: #fff; text-decoration: none; font-family: var(--fa-letra-titulos); font-weight: 700; font-size: 1.45rem; letter-spacing: 0.01em; }
 .logo:hover { color: #fff; }
 .logo-marca {
   width: 2rem; height: 2rem; border-radius: 0.4rem; background: var(--fa-naranjo); color: #fff;
@@ -145,9 +154,10 @@ code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, 
 
 /* ---------- Zona pública ---------- */
 .barra-publica { background: var(--fa-marino); padding: 0.75rem 0; position: sticky; top: 0; z-index: 1020; }
-.barra-publica .buscador { display: flex; max-width: 40rem; flex: 1; }
-.barra-publica .buscador .form-control { border-radius: 0.5rem 0 0 0.5rem; border: 0; padding: 0.6rem 1rem; }
-.barra-publica .buscador .btn { border-radius: 0 0.5rem 0.5rem 0; }
+.buscador-filtros .form-control {
+  padding-left: 2.2rem;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235b6774' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 0.75rem center;
+}
 .btn-acceso { border: 1px solid rgba(255, 255, 255, 0.6); color: #fff; background: transparent; }
 .btn-acceso:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #fff; }
 .migas { color: var(--fa-gris); font-size: 0.875rem; }
@@ -165,7 +175,7 @@ code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, 
 .tarjeta-producto .cuerpo { padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
 .tarjeta-producto .nombre { font-weight: 600; font-size: 1rem; color: var(--fa-grafito); text-decoration: none; min-height: 2.6em; }
 .tarjeta-producto .nombre::after { content: ""; position: absolute; inset: 0; } /* toda la tarjeta es clicable */
-.tarjeta-producto .precio { font-size: 1.25rem; font-weight: 700; }
+.tarjeta-producto .precio { font-family: var(--fa-letra-titulos); font-size: 1.5rem; font-weight: 700; }
 .tarjeta-producto .pie { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
 
 @media (max-width: 575.98px) {
@@ -182,7 +192,7 @@ code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, 
 
 .imagen-ficha { background: var(--fa-imagen); border-radius: 0.75rem; aspect-ratio: 4 / 3; display: grid; place-items: center; }
 .imagen-ficha img { max-width: 55%; max-height: 65%; object-fit: contain; }
-.precio-grande { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.01em; }
+.precio-grande { font-family: var(--fa-letra-titulos); font-size: 2.9rem; font-weight: 700; line-height: 1.1; }
 .tabla-datos { border-top: 1px solid var(--fa-borde); }
 .tabla-datos > div { display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--fa-borde); }
 .tabla-datos dt { width: 7.5rem; flex: none; color: var(--fa-gris); font-weight: 400; }

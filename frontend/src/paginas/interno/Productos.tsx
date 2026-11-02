@@ -74,7 +74,7 @@ export function Productos() {
                           <div className="miniatura"><ImagenProducto url={p.imagenUrl} alt="" /></div>
                           <div>
                             <div className="fw-semibold">{p.nombre}</div>
-                            <div className="texto-secundario small">{p.sku}{p.marca && ` · ${p.marca}`}</div>
+                            <div className="texto-secundario small"><span className="codigo">{p.sku}</span>{p.marca && ` · ${p.marca}`}</div>
                           </div>
                         </div>
                       </td>

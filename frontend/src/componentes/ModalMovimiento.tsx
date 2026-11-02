@@ -73,7 +73,7 @@ export function ModalMovimiento({
       <div className="caja-producto mb-3">
         <div className="fw-bold" style={{ fontSize: "1rem" }}>{producto.nombre}</div>
         <div className="texto-secundario small mt-1">
-          SKU {producto.sku} · Stock disponible: <strong className="text-dark">{numero(stock)}</strong> · Mínimo: {producto.stockMinimo}
+          SKU <span className="codigo">{producto.sku}</span> · Stock disponible: <strong className="text-dark">{numero(stock)}</strong> · Mínimo: {producto.stockMinimo}
         </div>
       </div>
 

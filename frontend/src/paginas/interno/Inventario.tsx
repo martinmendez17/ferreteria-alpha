@@ -131,7 +131,7 @@ export function Inventario() {
                 <tbody>
                   {datos.datos.map((p) => (
                     <tr key={p._id} className={resaltado === p._id ? "resaltada" : ""}>
-                      <td className="texto-secundario text-nowrap">{p.sku}</td>
+                      <td className="texto-secundario text-nowrap codigo">{p.sku}</td>
                       <td className="fw-semibold">{p.nombre}</td>
                       <td className="d-none d-xl-table-cell">{p.categoria.nombre}</td>
                       <td className={`text-end tabular ${p.estadoStock !== "normal" ? "stock-bajo" : ""}`}>{numero(p.inventario.stockActual)}</td>
@@ -149,7 +149,7 @@ export function Inventario() {
               {datos.datos.map((p) => (
                 <div key={p._id} className="tarjeta-movil" style={resaltado === p._id ? { background: "#edf8f1" } : undefined}>
                   <div className="d-flex justify-content-between align-items-start gap-2">
-                    <span className="texto-secundario small">{p.sku}</span>
+                    <span className="texto-secundario small codigo">{p.sku}</span>
                     <EtiquetaEstado valor={p.estadoStock} />
                   </div>
                   <div className="fw-bold my-1" style={{ fontSize: "1rem" }}>{p.nombre}</div>

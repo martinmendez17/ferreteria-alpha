@@ -138,7 +138,7 @@ export function Historial() {
                           <button type="button" className="btn-enlace text-start" onClick={() => setParams({ ...Object.fromEntries(params), producto: m.producto._id, pagina: "1" })}>
                             {m.producto.nombre}
                           </button>
-                          <div className="texto-secundario small">{m.producto.sku}</div>
+                          <div className="texto-secundario small codigo">{m.producto.sku}</div>
                         </td>
                       )}
                       <td>
