@@ -1,0 +1,32 @@
+# Configuración para publicar la API en Render (https://render.com) como "Blueprint".
+# Los valores marcados sync: false se escriben a mano en el panel de Render (no se suben a GitHub).
+services:
+  - type: web
+    name: ferreteria-alpha-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/salud
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: ferreteria_alpha
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: FRONTEND_URL
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: CORREO_REMITENTE
+        sync: false
+      - key: NOMBRE_REMITENTE
+        value: Ferretería Alpha
