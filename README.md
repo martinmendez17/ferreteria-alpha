@@ -25,6 +25,7 @@ ferreteria-alpha/
 │   ├── scripts/
 │   │   ├── cargar-base.ts       Crea las 5 colecciones (validadores + índices) y carga los datos de prueba
 │   │   ├── consultas.ts         Las 13 consultas de la Entrega 1 traducidas a MongoDB
+│   │   ├── probar-api.ts        Prueba automática de 85 casos de la API
 │   │   └── probar-conexion.ts   Muestra la versión de MongoDB y cuántos documentos hay
 │   ├── src/
 │   │   ├── config/              Variables de entorno, conexión y esquema de la base
@@ -112,6 +113,7 @@ Si la API no está en `http://localhost:3000/api`, crea `frontend/.env.local` co
 | `npm run db:probar` | Prueba la conexión y cuenta los documentos |
 | `npm run db:consultas` | Ejecuta las 13 consultas en orden y muestra sus resultados |
 | `npm run db:consultas -- --exportar` | Regenera `mongodb/consultas.mongodb.js` |
+| `npm run test:api` | Prueba 85 casos de la API (con la API corriendo): cada caso de uso y cada error con su código HTTP |
 | `npm run typecheck` | Revisa los tipos de TypeScript |
 
 ## Recuperación de contraseña por correo

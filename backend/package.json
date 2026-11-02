@@ -13,6 +13,7 @@
     "db:cargar": "tsx scripts/cargar-base.ts",
     "db:probar": "tsx scripts/probar-conexion.ts",
     "db:consultas": "tsx scripts/consultas.ts",
+    "test:api": "tsx scripts/probar-api.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
