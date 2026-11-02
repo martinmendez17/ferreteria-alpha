@@ -292,8 +292,11 @@ if (db.productos.countDocuments({ "proveedor._id": norte._id }) === 0) {
     mongo: `// MongoDB no tiene ALTER TABLE: cada documento puede tener campos distintos.
 // 1) Se agrega el campo a los documentos que no lo tienen (como el de C01)
 db.productos.updateMany({ marca: { $exists: false } }, { $set: { marca: null } });
-// 2) Se actualiza el validador para que el campo sea parte del esquema
-db.runCommand({ collMod: "productos", validator: { /* validador con marca: string o null, obligatorio */ } });`,
+// 2) Se agrega el campo al validador actual, como obligatorio (texto o null)
+const vProd = db.getCollectionInfos({ name: "productos" })[0].options.validator;
+vProd.$jsonSchema.required.push("marca");
+vProd.$jsonSchema.properties.marca = { bsonType: ["string", "null"], maxLength: 60 };
+db.runCommand({ collMod: "productos", validator: vProd });`,
     async ejecutar() {
       const r = await col.productos.updateMany({ marca: { $exists: false } }, { $set: { marca: null } });
       await db.command({ collMod: "productos", validator: validadorCon("productos", "marca", { bsonType: ["string", "null"], maxLength: 60 }) });
@@ -307,7 +310,10 @@ db.runCommand({ collMod: "productos", validator: { /* validador con marca: strin
     requerimiento: "RNF01, RNF06",
     sql: `ALTER TABLE usuario ADD COLUMN ultimoAcceso TIMESTAMP;`,
     mongo: `db.usuarios.updateMany({ ultimoAcceso: { $exists: false } }, { $set: { ultimoAcceso: null } });
-db.runCommand({ collMod: "usuarios", validator: { /* validador con ultimoAcceso: date o null, obligatorio */ } });`,
+const vUsu = db.getCollectionInfos({ name: "usuarios" })[0].options.validator;
+vUsu.$jsonSchema.required.push("ultimoAcceso");
+vUsu.$jsonSchema.properties.ultimoAcceso = { bsonType: ["date", "null"] };
+db.runCommand({ collMod: "usuarios", validator: vUsu });`,
     async ejecutar() {
       const r = await col.usuarios.updateMany({ ultimoAcceso: { $exists: false } }, { $set: { ultimoAcceso: null } });
       await db.command({ collMod: "usuarios", validator: validadorCon("usuarios", "ultimoAcceso", { bsonType: ["date", "null"] }) });
