@@ -1,0 +1,15 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno: tienen claves, NUNCA se suben
+.env
+.env.local
+.env.*.local
+
+# Compilados y temporales
+dist/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
