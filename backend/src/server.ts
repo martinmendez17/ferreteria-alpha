@@ -1,11 +1,11 @@
 import { app } from "./app";
+import { cliente, conectar } from "./config/db";
 import { env } from "./config/env";
-import { prisma } from "./config/prisma";
 
 async function iniciar() {
   // Se prueba la conexión antes de aceptar peticiones
-  await prisma.$queryRaw`SELECT 1`;
-  console.log("Conexión a PostgreSQL: OK");
+  await conectar();
+  console.log(`Conexión a MongoDB: OK (base "${env.mongodbDb}")`);
 
   const servidor = app.listen(env.port, () => {
     console.log(`API de Ferretería Alpha escuchando en http://localhost:${env.port}`);
@@ -13,7 +13,7 @@ async function iniciar() {
 
   const cerrar = async () => {
     servidor.close();
-    await prisma.$disconnect();
+    await cliente.close();
     process.exit(0);
   };
   process.on("SIGINT", cerrar);
@@ -21,7 +21,7 @@ async function iniciar() {
 }
 
 iniciar().catch(async (error) => {
-  console.error("No se pudo iniciar la API:", error);
-  await prisma.$disconnect();
+  console.error("No se pudo iniciar la API:", error instanceof Error ? error.message : error);
+  await cliente.close().catch(() => {});
   process.exit(1);
 });
