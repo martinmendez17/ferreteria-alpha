@@ -1,0 +1,10 @@
+{
+  "_id": { "$oid": "6710a1f0c2e4b81a2c000001" },
+  "nombreCompleto": "María González",
+  "email": "maria.gonzalez@alpha.cl",
+  "passwordHash": "$2b$10$nRwEHKsFZCJ1zGcJ0FNaFwEaDPjzQNlVLWtKGFY90m54skdVdIk9p",
+  "rol": "Administrador",
+  "estado": "activo",
+  "fechaCreacion": { "$date": "2026-09-28T13:00:00Z" },
+  "ultimoAcceso": { "$date": "2026-10-19T14:40:12Z" }
+}

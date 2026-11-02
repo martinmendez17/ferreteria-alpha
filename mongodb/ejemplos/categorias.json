@@ -1,0 +1,5 @@
+{
+  "_id": { "$oid": "6710a1f0c2e4b81a2c000101" },
+  "nombre": "Herramientas manuales",
+  "descripcion": "Martillos, destornilladores, llaves y alicates"
+}
