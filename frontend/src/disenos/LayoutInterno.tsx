@@ -30,7 +30,9 @@ export function LayoutInterno() {
   const ubicacion = useLocation();
   const [titulo, setTitulo] = useState("Panel");
 
-  useEffect(() => window.scrollTo(0, 0), [ubicacion.pathname]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [ubicacion.pathname]);
 
   if (!usuario) return <Navigate to="/login" replace state={{ desde: ubicacion.pathname + ubicacion.search }} />;
   const enlaces = ENLACES.filter((e) => !e.admin || esAdmin);

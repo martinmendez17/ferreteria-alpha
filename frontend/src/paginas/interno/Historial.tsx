@@ -21,7 +21,9 @@ export function Historial() {
   const [borrador, setBorrador] = useState(filtros);
   const [errorFechas, setErrorFechas] = useState<string | null>(null);
   // Si la URL cambia (por ejemplo, al hacer clic en un producto), el formulario se actualiza
-  useEffect(() => setBorrador(filtros), [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setBorrador(filtros);
+  }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lista de productos para el selector (incluye todos los activos)
   const productos = usarDatos((signal) => api<Paginado<FilaInventario>>("/inventario", { signal, consulta: { porPagina: 100 } }), []);

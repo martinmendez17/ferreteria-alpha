@@ -13,8 +13,12 @@ export function LayoutPublico() {
   const [texto, setTexto] = useState(params.get("q") ?? "");
 
   // Si cambia la búsqueda en la URL (por ejemplo, al limpiar filtros), se actualiza el campo
-  useEffect(() => setTexto(params.get("q") ?? ""), [params]);
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  useEffect(() => {
+    setTexto(params.get("q") ?? "");
+  }, [params]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   function buscar(e: FormEvent) {
     e.preventDefault();
