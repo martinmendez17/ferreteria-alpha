@@ -33,7 +33,9 @@ export function Catalogo() {
   // Filtros "en edición": se aplican al presionar "Aplicar filtros"
   const [borrador, setBorrador] = useState({ cats, min, max, soloStock });
   const [panelMovil, setPanelMovil] = useState(false);
-  useEffect(() => setBorrador({ cats, min, max, soloStock }), [cats, min, max, soloStock]);
+  useEffect(() => {
+    setBorrador({ cats, min, max, soloStock });
+  }, [cats, min, max, soloStock]);
 
   useEffect(() => {
     document.title = q ? `“${q}” · Ferretería Alpha` : "Catálogo · Ferretería Alpha";
