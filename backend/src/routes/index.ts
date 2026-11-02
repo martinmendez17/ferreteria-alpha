@@ -6,7 +6,7 @@ import * as prod from "../controllers/productos.controller";
 import { salud } from "../controllers/salud.controller";
 import * as usu from "../controllers/usuarios.controller";
 import { requiereSesion, soloAdmin } from "../middlewares/auth";
-import { limiteLogin, limiteRecuperacion } from "../middlewares/limites";
+import { limiteLogin, limiteRecuperacion, limiteRestablecer } from "../middlewares/limites";
 
 /*
  * Todas las rutas de la API REST en un solo lugar.
@@ -23,7 +23,7 @@ api.get("/salud", salud);
 api.post("/auth/login", limiteLogin, auth.login);
 api.get("/auth/perfil", requiereSesion, auth.perfil);
 api.post("/auth/recuperar", limiteRecuperacion, auth.recuperar);
-api.post("/auth/restablecer", limiteRecuperacion, auth.restablecer);
+api.post("/auth/restablecer", limiteRestablecer, auth.restablecer);
 
 // Catálogo público (RF01–RF04)
 api.get("/productos", prod.catalogo);

@@ -65,9 +65,10 @@ Los límites se cuentan por dirección IP. Cada respuesta incluye los encabezado
 
 | Alcance | Límite | Motivo |
 |---|---|---|
-| Toda la API (`/api/*`) | 300 peticiones cada 15 minutos | Evita abusos y protege el plan gratuito |
+| Toda la API (`/api/*`) | 1000 peticiones cada 15 minutos | Evita abusos y protege el plan gratuito |
 | `POST /auth/login` | 10 intentos fallidos cada 15 minutos | Frena el adivinar contraseñas |
-| `POST /auth/recuperar` y `/auth/restablecer` | 5 cada hora | Evita enviar correos sin fin |
+| `POST /auth/recuperar` | 5 cada hora | Evita enviar correos sin fin |
+| `POST /auth/restablecer` | 10 cada hora | Frena el adivinar enlaces |
 | Tamaño del cuerpo | 100 KB | Ninguna petición legítima es más grande |
 | Paginación | Catálogo: máx. 48 por página · listas internas: máx. 100 | Respuestas rápidas |
 

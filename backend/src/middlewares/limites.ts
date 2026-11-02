@@ -7,10 +7,10 @@ import { rateLimit } from "express-rate-limit";
 
 const respuesta = (mensaje: string) => ({ error: mensaje, codigo: "DEMASIADAS_PETICIONES" });
 
-/** Toda la API: 300 peticiones cada 15 minutos. */
+/** Toda la API: 1000 peticiones cada 15 minutos (una sala de clases comparte la misma IP). */
 export const limiteGeneral = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 300,
+  limit: 1000,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: respuesta("Hiciste demasiadas peticiones. Espera unos minutos e intenta de nuevo"),
@@ -33,4 +33,13 @@ export const limiteRecuperacion = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: respuesta("Ya pediste varios enlaces de recuperación. Espera una hora"),
+});
+
+/** Cambiar la contraseña con el enlace: 10 intentos por hora (contador aparte del anterior). */
+export const limiteRestablecer = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: respuesta("Demasiados intentos de cambiar la contraseña. Espera una hora"),
 });
